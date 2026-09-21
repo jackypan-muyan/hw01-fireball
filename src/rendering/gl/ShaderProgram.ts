@@ -29,20 +29,32 @@ class ShaderProgram {
   unifModelInvTr: WebGLUniformLocation;
   unifViewProj: WebGLUniformLocation;
   unifColor: WebGLUniformLocation;
+  unifSineAmplitude: WebGLUniformLocation;
+  unifSineFrequency: WebGLUniformLocation;
+  unifVertexSpeedX: WebGLUniformLocation;
+  unifVertexSpeedY: WebGLUniformLocation;
+  unifFbmScale: WebGLUniformLocation;
+  unifFbmOctaves: WebGLUniformLocation;
   unifCameraPos: WebGLUniformLocation;
   unifFresnelBias: WebGLUniformLocation;
   unifFresnelScale: WebGLUniformLocation;
   unifFresnelPower: WebGLUniformLocation;
   unifFresnelThreshold: WebGLUniformLocation;
+  unifCenterFresnelBias: WebGLUniformLocation;
+  unifCenterFresnelScale: WebGLUniformLocation;
+  unifCenterFresnelPower: WebGLUniformLocation;
+  unifCenterFresnelThreshold: WebGLUniformLocation;
   unifTime: WebGLUniformLocation;
   unifPerlinSpeedX: WebGLUniformLocation;
   unifPerlinSpeedY: WebGLUniformLocation;
   unifPerlinScaleX: WebGLUniformLocation;
   unifPerlinScaleY: WebGLUniformLocation;
   unifPerlinThreshold: WebGLUniformLocation;
+  unifFireTextureTesselation: WebGLUniformLocation;
   unifFireRed: WebGLUniformLocation;
   unifFireOrange: WebGLUniformLocation;
   unifFireYellow: WebGLUniformLocation;
+  unifFresnelCenterColor: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -62,20 +74,32 @@ class ShaderProgram {
     this.unifModelInvTr = gl.getUniformLocation(this.prog, "u_ModelInvTr");
     this.unifViewProj   = gl.getUniformLocation(this.prog, "u_ViewProj");
     this.unifColor      = gl.getUniformLocation(this.prog, "u_Color");
+    this.unifSineAmplitude = gl.getUniformLocation(this.prog, 'u_SineAmplitude');
+    this.unifSineFrequency = gl.getUniformLocation(this.prog, 'u_SineFrequency');
+    this.unifVertexSpeedX = gl.getUniformLocation(this.prog, 'u_VertexSpeedX');
+    this.unifVertexSpeedY = gl.getUniformLocation(this.prog, 'u_VertexSpeedY');
+    this.unifFbmScale = gl.getUniformLocation(this.prog, 'u_FbmScale');
+    this.unifFbmOctaves = gl.getUniformLocation(this.prog, 'u_FbmOctaves');
     this.unifCameraPos = gl.getUniformLocation(this.prog, 'u_CameraPos');
     this.unifFresnelBias = gl.getUniformLocation(this.prog, 'u_FresnelBias');
     this.unifFresnelScale = gl.getUniformLocation(this.prog, 'u_FresnelScale');
     this.unifFresnelPower = gl.getUniformLocation(this.prog, 'u_FresnelPower');
     this.unifFresnelThreshold = gl.getUniformLocation(this.prog, 'u_FresnelThreshold');
+    this.unifCenterFresnelBias = gl.getUniformLocation(this.prog, 'u_CenterFresnelBias');
+    this.unifCenterFresnelScale = gl.getUniformLocation(this.prog, 'u_CenterFresnelScale');
+    this.unifCenterFresnelPower = gl.getUniformLocation(this.prog, 'u_CenterFresnelPower');
+    this.unifCenterFresnelThreshold = gl.getUniformLocation(this.prog, 'u_CenterFresnelThreshold');
     this.unifTime = gl.getUniformLocation(this.prog, 'u_Time');
     this.unifPerlinSpeedX = gl.getUniformLocation(this.prog, 'u_PerlinSpeedX');
     this.unifPerlinSpeedY = gl.getUniformLocation(this.prog, 'u_PerlinSpeedY');
     this.unifPerlinScaleX = gl.getUniformLocation(this.prog, 'u_PerlinScaleX');
     this.unifPerlinScaleY = gl.getUniformLocation(this.prog, 'u_PerlinScaleY');
     this.unifPerlinThreshold = gl.getUniformLocation(this.prog, 'u_PerlinThreshold');
+    this.unifFireTextureTesselation = gl.getUniformLocation(this.prog, 'u_FireTextureTesselation');
     this.unifFireRed = gl.getUniformLocation(this.prog, 'u_FireRed');
     this.unifFireOrange = gl.getUniformLocation(this.prog, 'u_FireOrange');
     this.unifFireYellow = gl.getUniformLocation(this.prog, 'u_FireYellow');
+    this.unifFresnelCenterColor = gl.getUniformLocation(this.prog, 'u_FresnelCenterColor');
   }
 
   use() {
@@ -113,6 +137,32 @@ class ShaderProgram {
     }
   }
 
+  setVertexDeformation(amplitude: number, frequency: number, fbmScale: number, fbmOctaves: number) {
+    this.use();
+    if (this.unifSineAmplitude !== null) {
+      gl.uniform1f(this.unifSineAmplitude, amplitude);
+    }
+    if (this.unifSineFrequency !== null) {
+      gl.uniform1f(this.unifSineFrequency, frequency);
+    }
+    if (this.unifFbmScale !== null) {
+      gl.uniform1f(this.unifFbmScale, fbmScale);
+    }
+    if (this.unifFbmOctaves !== null) {
+      gl.uniform1i(this.unifFbmOctaves, fbmOctaves);
+    }
+  }
+
+  setVertexAnimation(speedX: number, speedY: number) {
+    this.use();
+    if (this.unifVertexSpeedX !== null) {
+      gl.uniform1f(this.unifVertexSpeedX, speedX);
+    }
+    if (this.unifVertexSpeedY !== null) {
+      gl.uniform1f(this.unifVertexSpeedY, speedY);
+    }
+  }
+
   setFresnelParameters(bias: number, scale: number, power: number, threshold: number) {
     this.use();
     if (this.unifFresnelBias !== null) {
@@ -126,6 +176,22 @@ class ShaderProgram {
     }
     if (this.unifFresnelThreshold !== null) {
       gl.uniform1f(this.unifFresnelThreshold, threshold);
+    }
+  }
+
+  setCenterFresnelParameters(bias: number, scale: number, power: number, threshold: number) {
+    this.use();
+    if (this.unifCenterFresnelBias !== null) {
+      gl.uniform1f(this.unifCenterFresnelBias, bias);
+    }
+    if (this.unifCenterFresnelScale !== null) {
+      gl.uniform1f(this.unifCenterFresnelScale, scale);
+    }
+    if (this.unifCenterFresnelPower !== null) {
+      gl.uniform1f(this.unifCenterFresnelPower, power);
+    }
+    if (this.unifCenterFresnelThreshold !== null) {
+      gl.uniform1f(this.unifCenterFresnelThreshold, threshold);
     }
   }
 
@@ -163,7 +229,14 @@ class ShaderProgram {
     }
   }
 
-  setFireColors(red: vec4, orange: vec4, yellow: vec4) {
+  setFireTextureTesselation(tesselation: number) {
+    this.use();
+    if (this.unifFireTextureTesselation !== null) {
+      gl.uniform1f(this.unifFireTextureTesselation, tesselation);
+    }
+  }
+
+  setFireColors(red: vec4, orange: vec4, yellow: vec4, fresnelCenter: vec4) {
     this.use();
     if (this.unifFireRed !== null) {
       gl.uniform4fv(this.unifFireRed, red);
@@ -173,6 +246,9 @@ class ShaderProgram {
     }
     if (this.unifFireYellow !== null) {
       gl.uniform4fv(this.unifFireYellow, yellow);
+    }
+    if (this.unifFresnelCenterColor !== null) {
+      gl.uniform4fv(this.unifFresnelCenterColor, fresnelCenter);
     }
   }
 
