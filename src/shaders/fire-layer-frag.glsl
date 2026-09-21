@@ -19,6 +19,7 @@ uniform float u_FireFadePower;
 
 out vec4 out_Col;
 
+// Perlin Noise Functions =======================================================================
 vec3 gradientHash(vec3 latticePoint)
 {
     vec3 hashInput = vec3(
@@ -61,6 +62,7 @@ float perlinNoise(vec3 samplePosition)
 
     return clamp(rawNoise * 0.5 + 0.5, 0.0, 1.0);
 }
+// ====================================================================================================
 
 void main()
 {

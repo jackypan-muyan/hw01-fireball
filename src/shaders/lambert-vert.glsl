@@ -27,7 +27,6 @@ uniform float u_FbmScale;
 uniform int u_FbmOctaves;
 uniform float u_Time;
 uniform float u_TailAmplitude;
-uniform float u_VertexMaskThreshold;
 uniform float u_GaussianWidth;
 uniform float u_MaskedFbmIntensity;
 
@@ -47,6 +46,7 @@ const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, whi
                                         //the geometry in the fragment shader.
 
 const vec3 backVector = normalize(vec3(-1.0, -1.0, -1.0));
+
 // Perlin Noise Functions =======================================================================
 vec3 gradientHash(vec3 latticePoint)
 {
@@ -114,19 +114,8 @@ float fbm(vec3 samplePosition)
 }
 // ====================================================================================================
 
-// Vertex Mask =======================================================================
-
-// Select a cap on the back of the sphere. The alignment is remapped from
-// [-1, 1] to [0, 1], where 1 points directly along backVector.
-float VertexMask(vec3 vertexPosition, float threshold)
-{
-    float alignment = dot(normalize(vertexPosition), backVector);
-    float normalizedAlignment = alignment * 0.5 + 0.5;
-    return step(threshold, normalizedAlignment);
-}
-
 // Make the expansion strongest at the center of the selected cap and smoothly
-// reduce it toward the mask boundary.
+// reduce it away from the back direction.
 float GaussianMask(vec3 vertexPosition, float width)
 {
     vec3 direction = normalize(vertexPosition);
@@ -146,10 +135,9 @@ void main()
     // Noramal
     vec3 objectNormal = normalize(vs_Nor.xyz);
 
-    // Apply the masked Gaussian expansion before evaluating the animated fBM.
-    float vertexMask = VertexMask(vs_Pos.xyz, u_VertexMaskThreshold);
+    // Apply the Gaussian expansion before evaluating the animated fBM.
     float gaussianMask = GaussianMask(vs_Pos.xyz, u_GaussianWidth);
-    float vertexGaussianMask = vertexMask * gaussianMask;
+    float vertexGaussianMask = gaussianMask;
     fs_GaussianMask = vertexGaussianMask;
     float tailDisplacement =
         vertexGaussianMask

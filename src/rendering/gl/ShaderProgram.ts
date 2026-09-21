@@ -36,7 +36,6 @@ class ShaderProgram {
   unifFbmScale: WebGLUniformLocation;
   unifFbmOctaves: WebGLUniformLocation;
   unifTailAmplitude: WebGLUniformLocation;
-  unifVertexMaskThreshold: WebGLUniformLocation;
   unifGaussianWidth: WebGLUniformLocation;
   unifMaskedFbmIntensity: WebGLUniformLocation;
   unifCameraPos: WebGLUniformLocation;
@@ -107,7 +106,6 @@ class ShaderProgram {
     this.unifFbmScale = gl.getUniformLocation(this.prog, 'u_FbmScale');
     this.unifFbmOctaves = gl.getUniformLocation(this.prog, 'u_FbmOctaves');
     this.unifTailAmplitude = gl.getUniformLocation(this.prog, 'u_TailAmplitude');
-    this.unifVertexMaskThreshold = gl.getUniformLocation(this.prog, 'u_VertexMaskThreshold');
     this.unifGaussianWidth = gl.getUniformLocation(this.prog, 'u_GaussianWidth');
     this.unifMaskedFbmIntensity = gl.getUniformLocation(this.prog, 'u_MaskedFbmIntensity');
     this.unifCameraPos = gl.getUniformLocation(this.prog, 'u_CameraPos');
@@ -207,16 +205,12 @@ class ShaderProgram {
 
   setTailDeformation(
     amplitude: number,
-    maskThreshold: number,
     gaussianWidth: number,
     maskedFbmIntensity: number,
   ) {
     this.use();
     if (this.unifTailAmplitude !== null) {
       gl.uniform1f(this.unifTailAmplitude, amplitude);
-    }
-    if (this.unifVertexMaskThreshold !== null) {
-      gl.uniform1f(this.unifVertexMaskThreshold, maskThreshold);
     }
     if (this.unifGaussianWidth !== null) {
       gl.uniform1f(this.unifGaussianWidth, gaussianWidth);

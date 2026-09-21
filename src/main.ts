@@ -24,7 +24,6 @@ const controls = {
   fbmScale: 13.0,
   fbmOctaves: 1,
   tailAmplitude: 1.5,
-  vertexMaskThreshold: 0.0,
   gaussianWidth: 0.35,
   maskedFbmIntensity: 2.0,
   fireFadeScalar: 1.3,
@@ -59,10 +58,10 @@ const controls = {
   fireOrange: [255, 122, 0],
   fireYellow: [255, 255, 255],
   fireLayer2Color: [255, 219, 0],
-  fragmentSineFrequency: 4.0,
-  fragmentSineAmplitude: 0.63,
+  fragmentSineFrequency: 8.2,
+  fragmentSineAmplitude: 0.61,
   fragmentSineSpeed: -30.0,
-  fragmentSineMaskPower: 1.0,
+  fragmentSineMaskPower: 3.8,
   fragmentSineColor: [255, 255, 255],
   fragmentSineAlpha: 0.06,
   fresnelCenterColor: [255, 207, 0],
@@ -124,7 +123,6 @@ function main() {
   gui.add(controls, 'fbmScale', 0.0, 50.0).step(0.1).name('fBM Scale');
   gui.add(controls, 'fbmOctaves', 1, 8).step(1).name('fBM Octaves');
   gui.add(controls, 'tailAmplitude', 0.0, 10.0).step(0.01).name('Tail Amplitude');
-  gui.add(controls, 'vertexMaskThreshold', 0.0, 1.0).step(0.01).name('Vertex Mask Threshold');
   gui.add(controls, 'gaussianWidth', 0.01, 1.0).step(0.01).name('Gaussian Width');
   gui.add(controls, 'maskedFbmIntensity', 1.0, 10.0).step(0.1).name('Masked fBM Intensity');
   gui.add(controls, 'fireFadeScalar', 0.0, 10.0).step(0.01).name('Fire Fade Scalar');
@@ -237,7 +235,6 @@ function main() {
     );
     lambert.setTailDeformation(
       controls.tailAmplitude,
-      controls.vertexMaskThreshold,
       controls.gaussianWidth,
       controls.maskedFbmIntensity,
     );
@@ -310,7 +307,6 @@ function main() {
     );
     fireLayer.setTailDeformation(
       controls.tailAmplitude,
-      controls.vertexMaskThreshold,
       controls.gaussianWidth,
       controls.maskedFbmIntensity,
     );
@@ -351,7 +347,6 @@ function main() {
     );
     sineLayer.setTailDeformation(
       controls.tailAmplitude,
-      controls.vertexMaskThreshold,
       controls.gaussianWidth,
       controls.maskedFbmIntensity,
     );
