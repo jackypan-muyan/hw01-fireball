@@ -54,6 +54,7 @@ class ShaderProgram {
   unifPerlinScaleX: WebGLUniformLocation;
   unifPerlinScaleY: WebGLUniformLocation;
   unifPerlinThreshold: WebGLUniformLocation;
+  unifPerlinThreshold2: WebGLUniformLocation;
   unifVoronoiSpeedX: WebGLUniformLocation;
   unifVoronoiSpeedY: WebGLUniformLocation;
   unifVoronoiScaleX: WebGLUniformLocation;
@@ -62,6 +63,7 @@ class ShaderProgram {
   unifFireRed: WebGLUniformLocation;
   unifFireOrange: WebGLUniformLocation;
   unifFireYellow: WebGLUniformLocation;
+  unifFireLayer2Color: WebGLUniformLocation;
   unifFresnelCenterColor: WebGLUniformLocation;
   unifAshColor: WebGLUniformLocation;
   unifAshThreshold: WebGLUniformLocation;
@@ -74,6 +76,11 @@ class ShaderProgram {
   unifTornadoColor: WebGLUniformLocation;
   unifFireFadeScalar: WebGLUniformLocation;
   unifFireFadePower: WebGLUniformLocation;
+  unifFragmentSineFrequency: WebGLUniformLocation;
+  unifFragmentSineAmplitude: WebGLUniformLocation;
+  unifFragmentSineSpeed: WebGLUniformLocation;
+  unifFragmentSineMaskPower: WebGLUniformLocation;
+  unifFragmentSineColor: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -118,6 +125,7 @@ class ShaderProgram {
     this.unifPerlinScaleX = gl.getUniformLocation(this.prog, 'u_PerlinScaleX');
     this.unifPerlinScaleY = gl.getUniformLocation(this.prog, 'u_PerlinScaleY');
     this.unifPerlinThreshold = gl.getUniformLocation(this.prog, 'u_PerlinThreshold');
+    this.unifPerlinThreshold2 = gl.getUniformLocation(this.prog, 'u_PerlinThreshold2');
     this.unifVoronoiSpeedX = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedX');
     this.unifVoronoiSpeedY = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedY');
     this.unifVoronoiScaleX = gl.getUniformLocation(this.prog, 'u_VoronoiScaleX');
@@ -126,6 +134,7 @@ class ShaderProgram {
     this.unifFireRed = gl.getUniformLocation(this.prog, 'u_FireRed');
     this.unifFireOrange = gl.getUniformLocation(this.prog, 'u_FireOrange');
     this.unifFireYellow = gl.getUniformLocation(this.prog, 'u_FireYellow');
+    this.unifFireLayer2Color = gl.getUniformLocation(this.prog, 'u_FireLayer2Color');
     this.unifFresnelCenterColor = gl.getUniformLocation(this.prog, 'u_FresnelCenterColor');
     this.unifAshColor = gl.getUniformLocation(this.prog, 'u_AshColor');
     this.unifAshThreshold = gl.getUniformLocation(this.prog, 'u_AshThreshold');
@@ -138,6 +147,11 @@ class ShaderProgram {
     this.unifTornadoColor = gl.getUniformLocation(this.prog, 'u_TornadoColor');
     this.unifFireFadeScalar = gl.getUniformLocation(this.prog, 'u_FireFadeScalar');
     this.unifFireFadePower = gl.getUniformLocation(this.prog, 'u_FireFadePower');
+    this.unifFragmentSineFrequency = gl.getUniformLocation(this.prog, 'u_FragmentSineFrequency');
+    this.unifFragmentSineAmplitude = gl.getUniformLocation(this.prog, 'u_FragmentSineAmplitude');
+    this.unifFragmentSineSpeed = gl.getUniformLocation(this.prog, 'u_FragmentSineSpeed');
+    this.unifFragmentSineMaskPower = gl.getUniformLocation(this.prog, 'u_FragmentSineMaskPower');
+    this.unifFragmentSineColor = gl.getUniformLocation(this.prog, 'u_FragmentSineColor');
   }
 
   use() {
@@ -222,6 +236,31 @@ class ShaderProgram {
     }
   }
 
+  setFragmentSineParameters(
+    frequency: number,
+    amplitude: number,
+    speed: number,
+    maskPower: number,
+    color: vec4,
+  ) {
+    this.use();
+    if (this.unifFragmentSineFrequency !== null) {
+      gl.uniform1f(this.unifFragmentSineFrequency, frequency);
+    }
+    if (this.unifFragmentSineAmplitude !== null) {
+      gl.uniform1f(this.unifFragmentSineAmplitude, amplitude);
+    }
+    if (this.unifFragmentSineSpeed !== null) {
+      gl.uniform1f(this.unifFragmentSineSpeed, speed);
+    }
+    if (this.unifFragmentSineMaskPower !== null) {
+      gl.uniform1f(this.unifFragmentSineMaskPower, maskPower);
+    }
+    if (this.unifFragmentSineColor !== null) {
+      gl.uniform4fv(this.unifFragmentSineColor, color);
+    }
+  }
+
   setFresnelParameters(bias: number, scale: number, power: number, threshold: number) {
     this.use();
     if (this.unifFresnelBias !== null) {
@@ -281,10 +320,13 @@ class ShaderProgram {
     }
   }
 
-  setPerlinThreshold(threshold: number) {
+  setPerlinThreshold(threshold: number, threshold2: number) {
     this.use();
     if (this.unifPerlinThreshold !== null) {
       gl.uniform1f(this.unifPerlinThreshold, threshold);
+    }
+    if (this.unifPerlinThreshold2 !== null) {
+      gl.uniform1f(this.unifPerlinThreshold2, threshold2);
     }
   }
 
@@ -313,7 +355,13 @@ class ShaderProgram {
     }
   }
 
-  setFireColors(red: vec4, orange: vec4, yellow: vec4, fresnelCenter: vec4) {
+  setFireColors(
+    red: vec4,
+    orange: vec4,
+    yellow: vec4,
+    fresnelCenter: vec4,
+    fireLayer2: vec4,
+  ) {
     this.use();
     if (this.unifFireRed !== null) {
       gl.uniform4fv(this.unifFireRed, red);
@@ -326,6 +374,9 @@ class ShaderProgram {
     }
     if (this.unifFresnelCenterColor !== null) {
       gl.uniform4fv(this.unifFresnelCenterColor, fresnelCenter);
+    }
+    if (this.unifFireLayer2Color !== null) {
+      gl.uniform4fv(this.unifFireLayer2Color, fireLayer2);
     }
   }
 

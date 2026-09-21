@@ -6,12 +6,14 @@ in vec3 fs_WorldPos;
 in float fs_GaussianMask;
 
 uniform vec4 u_FireYellow;
+uniform vec4 u_FireLayer2Color;
 uniform float u_Time;
 uniform float u_PerlinSpeedX;
 uniform float u_PerlinSpeedY;
 uniform float u_PerlinScaleX;
 uniform float u_PerlinScaleY;
 uniform float u_PerlinThreshold;
+uniform float u_PerlinThreshold2;
 uniform float u_FireFadeScalar;
 uniform float u_FireFadePower;
 
@@ -67,11 +69,21 @@ void main()
     samplePosition.xy += vec2(u_PerlinSpeedX, u_PerlinSpeedY) * u_Time;
 
     float perlinValue = 1.0 - perlinNoise(samplePosition);
-    float opacity = 1.0 - step(u_PerlinThreshold, perlinValue);
+    float layer1Mask = 1.0 - step(u_PerlinThreshold, perlinValue);
+    float layer2Mask = 1.0 - step(u_PerlinThreshold2, perlinValue);
+    float opacity = max(layer1Mask, layer2Mask);
 
     if (opacity < 0.5) {
         discard;
     }
+
+    // Layer 2 supplies the wider/base color. Layer 1 is drawn on top wherever
+    // its threshold is active.
+    vec4 fireLayerColor = mix(
+        u_FireLayer2Color,
+        u_FireYellow,
+        layer1Mask
+    );
 
     float poweredGaussianMask = pow(
         clamp(fs_GaussianMask, 0.0, 1.0),
@@ -84,7 +96,7 @@ void main()
     );
     float gaussianOpacity = 1.0 - gaussianFade;
     out_Col = vec4(
-        u_FireYellow.rgb,
-        u_FireYellow.a * gaussianOpacity
+        fireLayerColor.rgb,
+        fireLayerColor.a * gaussianOpacity
     );
 }

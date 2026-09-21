@@ -34,6 +34,12 @@ uniform float u_TornadoScaleX;
 uniform float u_TornadoScaleY;
 uniform float u_TornadoEdgeWidth;
 uniform float u_TornadoThreshold;
+uniform float u_PerlinSpeedX;
+uniform float u_PerlinSpeedY;
+uniform float u_PerlinScaleX;
+uniform float u_PerlinScaleY;
+uniform float u_PerlinThreshold;
+uniform float u_PerlinThreshold2;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -61,6 +67,51 @@ float FresnelMask(vec3 viewDir, vec3 normal, float bias, float scale, float powe
     float normalDotView = clamp(dot(normalize(viewDir), normalize(normal)), 0.0, 1.0);
     float result = bias + scale * pow(1.0 - normalDotView, power);
     return clamp(result, 0.0, 1.0);
+}
+// =====================================================================================
+
+// Perlin Noise Functions =======================================================================
+vec3 gradientHash(vec3 latticePoint)
+{
+    vec3 hashInput = vec3(
+        dot(latticePoint, vec3(127.1, 311.7, 74.7)),
+        dot(latticePoint, vec3(269.5, 183.3, 246.1)),
+        dot(latticePoint, vec3(113.5, 271.9, 124.6))
+    );
+
+    vec3 gradient = -1.0 + 2.0 * fract(sin(hashInput) * 43758.5453123);
+    return normalize(gradient);
+}
+
+vec3 perlinFade(vec3 t)
+{
+    return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+}
+
+float perlinNoise(vec3 samplePosition)
+{
+    vec3 cell = floor(samplePosition);
+    vec3 localPosition = fract(samplePosition);
+    vec3 blend = perlinFade(localPosition);
+
+    float n000 = dot(gradientHash(cell + vec3(0.0, 0.0, 0.0)), localPosition - vec3(0.0, 0.0, 0.0));
+    float n100 = dot(gradientHash(cell + vec3(1.0, 0.0, 0.0)), localPosition - vec3(1.0, 0.0, 0.0));
+    float n010 = dot(gradientHash(cell + vec3(0.0, 1.0, 0.0)), localPosition - vec3(0.0, 1.0, 0.0));
+    float n110 = dot(gradientHash(cell + vec3(1.0, 1.0, 0.0)), localPosition - vec3(1.0, 1.0, 0.0));
+    float n001 = dot(gradientHash(cell + vec3(0.0, 0.0, 1.0)), localPosition - vec3(0.0, 0.0, 1.0));
+    float n101 = dot(gradientHash(cell + vec3(1.0, 0.0, 1.0)), localPosition - vec3(1.0, 0.0, 1.0));
+    float n011 = dot(gradientHash(cell + vec3(0.0, 1.0, 1.0)), localPosition - vec3(0.0, 1.0, 1.0));
+    float n111 = dot(gradientHash(cell + vec3(1.0, 1.0, 1.0)), localPosition - vec3(1.0, 1.0, 1.0));
+
+    float nx00 = mix(n000, n100, blend.x);
+    float nx10 = mix(n010, n110, blend.x);
+    float nx01 = mix(n001, n101, blend.x);
+    float nx11 = mix(n011, n111, blend.x);
+    float nxy0 = mix(nx00, nx10, blend.y);
+    float nxy1 = mix(nx01, nx11, blend.y);
+    float rawNoise = mix(nxy0, nxy1, blend.z);
+
+    return clamp(rawNoise * 0.5 + 0.5, 0.0, 1.0);
 }
 // =====================================================================================
 
@@ -179,6 +230,28 @@ void main()
         ashMask *= gaussianOpacity;
         tornadoMask *= gaussianOpacity;
 
+        // Match the Fire Layer's Perlin mask, then invert it so the Lambert
+        // layer disappears exactly where the yellow fire layer is visible.
+        vec3 perlinSamplePosition = fs_WorldPos;
+        perlinSamplePosition.xy *= vec2(u_PerlinScaleX, u_PerlinScaleY);
+        perlinSamplePosition.xy += vec2(u_PerlinSpeedX, u_PerlinSpeedY) * u_Time;
+        float perlinValue = 1.0 - perlinNoise(perlinSamplePosition);
+        float fireLayer1Mask =
+            1.0 - step(u_PerlinThreshold, perlinValue);
+        float fireLayer2Mask =
+            1.0 - step(u_PerlinThreshold2, perlinValue);
+        float firePerlinMask = max(fireLayer1Mask, fireLayer2Mask);
+        float inverseFirePerlinMask = 1.0 - firePerlinMask;
+        float opacityMask = mix(
+            1.0,
+            inverseFirePerlinMask,
+            clamp(fs_GaussianMask, 0.0, 1.0)
+        );
+
+        if (opacityMask < 0.5) {
+            discard;
+        }
+
 
         // Final Color Calculation
         float fireFresnelMask = step(u_FresnelThreshold, fresnel);
@@ -221,6 +294,6 @@ void main()
 
         out_Col = vec4(
             finalColor,
-            diffuseColor.a
+            1.0
         );
 }
