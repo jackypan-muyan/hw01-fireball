@@ -46,7 +46,7 @@ out float fs_GaussianMask;  // The fire layer uses the inverse of this mask as o
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
 
-const vec3 backVector = vec3(0.0, 0.0, -1.0);
+const vec3 backVector = normalize(vec3(-1.0, -1.0, -1.0));
 // Perlin Noise Functions =======================================================================
 vec3 gradientHash(vec3 latticePoint)
 {

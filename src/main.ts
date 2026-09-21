@@ -27,7 +27,7 @@ const controls = {
   gaussianWidth: 0.35,
   maskedFbmIntensity: 2.0,
   fireFadeScalar: 1.28,
-  fireFadePower: 0.2,
+  fireFadePower: 0.4,
   fresnelBias: 0.38,
   fresnelScale: 1.0,
   fresnelPower: 3.1,
