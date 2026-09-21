@@ -26,6 +26,10 @@ uniform float u_VertexSpeedY;
 uniform float u_FbmScale;
 uniform int u_FbmOctaves;
 uniform float u_Time;
+uniform float u_TailAmplitude;
+uniform float u_VertexMaskThreshold;
+uniform float u_GaussianWidth;
+uniform float u_MaskedFbmIntensity;
 
 in vec4 vs_Pos;             // The array of vertex positions passed to the shader
 
@@ -37,10 +41,12 @@ out vec4 fs_Nor;            // The array of normals that has been transformed by
 out vec4 fs_LightVec;       // The direction in which our virtual light lies, relative to each vertex. This is implicitly passed to the fragment shader.
 out vec4 fs_Col;            // The color of each vertex. This is implicitly passed to the fragment shader.
 out vec3 fs_WorldPos;        // The position of each vertex in world space. This is implicitly passed to the fragment shader.
+out float fs_GaussianMask;  // The fire layer uses the inverse of this mask as opacity.
 
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
 
+const vec3 backVector = vec3(0.0, 0.0, -1.0);
 // Perlin Noise Functions =======================================================================
 vec3 gradientHash(vec3 latticePoint)
 {
@@ -108,6 +114,31 @@ float fbm(vec3 samplePosition)
 }
 // ====================================================================================================
 
+// Vertex Mask =======================================================================
+
+// Select a cap on the back of the sphere. The alignment is remapped from
+// [-1, 1] to [0, 1], where 1 points directly along backVector.
+float VertexMask(vec3 vertexPosition, float threshold)
+{
+    float alignment = dot(normalize(vertexPosition), backVector);
+    float normalizedAlignment = alignment * 0.5 + 0.5;
+    return step(threshold, normalizedAlignment);
+}
+
+// Make the expansion strongest at the center of the selected cap and smoothly
+// reduce it toward the mask boundary.
+float GaussianMask(vec3 vertexPosition, float width)
+{
+    vec3 direction = normalize(vertexPosition);
+    float cosAngle = clamp(dot(direction, backVector), -1.0, 1.0);
+    float angle = acos(cosAngle);
+    float safeWidth = max(width, 0.0001);
+    float normalizedDistance = angle / safeWidth;
+    return exp(-0.5 * normalizedDistance * normalizedDistance);
+}
+
+// ======================================================================================
+
 void main()
 {
     fs_Col = vs_Col;                         // Pass the vertex colors to the fragment shader for interpolation
@@ -115,13 +146,31 @@ void main()
     // Noramal
     vec3 objectNormal = normalize(vs_Nor.xyz);
 
-    // Position
+    // Apply the masked Gaussian expansion before evaluating the animated fBM.
+    float vertexMask = VertexMask(vs_Pos.xyz, u_VertexMaskThreshold);
+    float gaussianMask = GaussianMask(vs_Pos.xyz, u_GaussianWidth);
+    float vertexGaussianMask = vertexMask * gaussianMask;
+    fs_GaussianMask = vertexGaussianMask;
+    float tailDisplacement =
+        vertexGaussianMask
+        * u_TailAmplitude;
+    vec3 expandedPosition =
+        vs_Pos.xyz
+        + tailDisplacement * objectNormal;
+
+    // Position used to sample the animated fBM.
     vec2 vertexVelocity = vec2(u_VertexSpeedX, u_VertexSpeedY);
-    vec3 animatedPosition = vs_Pos.xyz;
+    vec3 animatedPosition = expandedPosition;
     animatedPosition.xy += vertexVelocity * u_Time;
 
     // FBM amplitude
     float fbmAmplitude = fbm(animatedPosition * u_FbmScale);
+    float maskedFbmIntensity = mix(
+        1.0,
+        u_MaskedFbmIntensity,
+        vertexGaussianMask
+    );
+    fbmAmplitude *= maskedFbmIntensity;
 
     // Sine wave displacement
     float vertexSpeed = length(vertexVelocity);
@@ -134,7 +183,7 @@ void main()
     // Displace the vertex position along its normal based on the sine wave and FBM amplitude
     float displacement = sineCurve * u_SineAmplitude * fbmAmplitude;
     vec4 displacedPosition = vec4(
-        vs_Pos.xyz + displacement * objectNormal,
+        expandedPosition + displacement * objectNormal,
         vs_Pos.w
     );
 

@@ -22,6 +22,12 @@ const controls = {
   vertexSpeedY: 0.0,
   fbmScale: 13.0,
   fbmOctaves: 1,
+  tailAmplitude: 1.51,
+  vertexMaskThreshold: 0.0,
+  gaussianWidth: 0.35,
+  maskedFbmIntensity: 2.0,
+  fireFadeScalar: 1.28,
+  fireFadePower: 0.2,
   fresnelBias: 0.38,
   fresnelScale: 1.0,
   fresnelPower: 3.1,
@@ -101,6 +107,12 @@ function main() {
   gui.add(controls, 'vertexSpeedY', 0.0, 30.0).step(0.01).name('Vertex Speed Y');
   gui.add(controls, 'fbmScale', 0.0, 50.0).step(0.1).name('fBM Scale');
   gui.add(controls, 'fbmOctaves', 1, 8).step(1).name('fBM Octaves');
+  gui.add(controls, 'tailAmplitude', 0.0, 10.0).step(0.01).name('Tail Amplitude');
+  gui.add(controls, 'vertexMaskThreshold', 0.0, 1.0).step(0.01).name('Vertex Mask Threshold');
+  gui.add(controls, 'gaussianWidth', 0.01, 1.0).step(0.01).name('Gaussian Width');
+  gui.add(controls, 'maskedFbmIntensity', 1.0, 10.0).step(0.1).name('Masked fBM Intensity');
+  gui.add(controls, 'fireFadeScalar', 0.0, 10.0).step(0.01).name('Fire Fade Scalar');
+  gui.add(controls, 'fireFadePower', 0.1, 10.0).step(0.1).name('Fire Fade Power');
   gui.add(controls, 'fresnelBias', 0.0, 1.0).step(0.01).name('Fresnel Bias');
   gui.add(controls, 'fresnelScale', 0.0, 2.0).step(0.01).name('Fresnel Scale');
   gui.add(controls, 'fresnelPower', 0.1, 10.0).step(0.1).name('Fresnel Power');
@@ -189,6 +201,12 @@ function main() {
       controls.fbmScale,
       controls.fbmOctaves,
     );
+    lambert.setTailDeformation(
+      controls.tailAmplitude,
+      controls.vertexMaskThreshold,
+      controls.gaussianWidth,
+      controls.maskedFbmIntensity,
+    );
     lambert.setVertexAnimation(
       controls.vertexSpeedX,
       controls.vertexSpeedY,
@@ -212,6 +230,10 @@ function main() {
       controls.tornadoEdgeWidth,
       controls.tornadoThreshold,
       colorToVec4(controls.tornadoColor),
+    );
+    lambert.setFireFadeParameters(
+      controls.fireFadeScalar,
+      controls.fireFadePower,
     );
     lambert.setFireColors(
       colorToVec4(controls.fireRed),
@@ -239,6 +261,12 @@ function main() {
       controls.fbmScale,
       controls.fbmOctaves,
     );
+    fireLayer.setTailDeformation(
+      controls.tailAmplitude,
+      controls.vertexMaskThreshold,
+      controls.gaussianWidth,
+      controls.maskedFbmIntensity,
+    );
     fireLayer.setVertexAnimation(
       controls.vertexSpeedX,
       controls.vertexSpeedY,
@@ -252,6 +280,10 @@ function main() {
       controls.perlinScaleY,
     );
     fireLayer.setPerlinThreshold(controls.perlinThreshold);
+    fireLayer.setFireFadeParameters(
+      controls.fireFadeScalar,
+      controls.fireFadePower,
+    );
     fireLayer.setFireColors(
       colorToVec4(controls.fireRed),
       colorToVec4(controls.fireOrange),
@@ -264,7 +296,12 @@ function main() {
       // square,
     ]);
 
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.depthMask(false);
     renderer.render(camera, fireLayer, [fireIcosphere]);
+    gl.depthMask(true);
+    gl.disable(gl.BLEND);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame

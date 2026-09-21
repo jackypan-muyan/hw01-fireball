@@ -41,6 +41,7 @@ in vec4 fs_Nor;
 in vec4 fs_LightVec;
 in vec4 fs_Col;
 in vec3 fs_WorldPos;
+in float fs_GaussianMask;
 
 out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
@@ -52,6 +53,8 @@ uniform vec4 u_FresnelCenterColor;
 uniform vec4 u_AshColor;
 uniform float u_AshThreshold;
 uniform vec4 u_TornadoColor;
+uniform float u_FireFadeScalar;
+uniform float u_FireFadePower;
 
 // Fresnel Mask =======================================================================
 float FresnelMask(vec3 viewDir, vec3 normal, float bias, float scale, float power) {
@@ -163,6 +166,18 @@ void main()
             u_TornadoThreshold,
             tornado
         );
+        float poweredGaussianMask = pow(
+            clamp(fs_GaussianMask, 0.0, 1.0),
+            max(u_FireFadePower, 0.0001)
+        );
+        float gaussianFade = clamp(
+            poweredGaussianMask * u_FireFadeScalar,
+            0.0,
+            1.0
+        );
+        float gaussianOpacity = 1.0 - gaussianFade;
+        ashMask *= gaussianOpacity;
+        tornadoMask *= gaussianOpacity;
 
 
         // Final Color Calculation

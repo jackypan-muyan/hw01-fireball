@@ -35,6 +35,10 @@ class ShaderProgram {
   unifVertexSpeedY: WebGLUniformLocation;
   unifFbmScale: WebGLUniformLocation;
   unifFbmOctaves: WebGLUniformLocation;
+  unifTailAmplitude: WebGLUniformLocation;
+  unifVertexMaskThreshold: WebGLUniformLocation;
+  unifGaussianWidth: WebGLUniformLocation;
+  unifMaskedFbmIntensity: WebGLUniformLocation;
   unifCameraPos: WebGLUniformLocation;
   unifFresnelBias: WebGLUniformLocation;
   unifFresnelScale: WebGLUniformLocation;
@@ -68,6 +72,8 @@ class ShaderProgram {
   unifTornadoEdgeWidth: WebGLUniformLocation;
   unifTornadoThreshold: WebGLUniformLocation;
   unifTornadoColor: WebGLUniformLocation;
+  unifFireFadeScalar: WebGLUniformLocation;
+  unifFireFadePower: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -93,6 +99,10 @@ class ShaderProgram {
     this.unifVertexSpeedY = gl.getUniformLocation(this.prog, 'u_VertexSpeedY');
     this.unifFbmScale = gl.getUniformLocation(this.prog, 'u_FbmScale');
     this.unifFbmOctaves = gl.getUniformLocation(this.prog, 'u_FbmOctaves');
+    this.unifTailAmplitude = gl.getUniformLocation(this.prog, 'u_TailAmplitude');
+    this.unifVertexMaskThreshold = gl.getUniformLocation(this.prog, 'u_VertexMaskThreshold');
+    this.unifGaussianWidth = gl.getUniformLocation(this.prog, 'u_GaussianWidth');
+    this.unifMaskedFbmIntensity = gl.getUniformLocation(this.prog, 'u_MaskedFbmIntensity');
     this.unifCameraPos = gl.getUniformLocation(this.prog, 'u_CameraPos');
     this.unifFresnelBias = gl.getUniformLocation(this.prog, 'u_FresnelBias');
     this.unifFresnelScale = gl.getUniformLocation(this.prog, 'u_FresnelScale');
@@ -126,6 +136,8 @@ class ShaderProgram {
     this.unifTornadoEdgeWidth = gl.getUniformLocation(this.prog, 'u_TornadoEdgeWidth');
     this.unifTornadoThreshold = gl.getUniformLocation(this.prog, 'u_TornadoThreshold');
     this.unifTornadoColor = gl.getUniformLocation(this.prog, 'u_TornadoColor');
+    this.unifFireFadeScalar = gl.getUniformLocation(this.prog, 'u_FireFadeScalar');
+    this.unifFireFadePower = gl.getUniformLocation(this.prog, 'u_FireFadePower');
   }
 
   use() {
@@ -176,6 +188,27 @@ class ShaderProgram {
     }
     if (this.unifFbmOctaves !== null) {
       gl.uniform1i(this.unifFbmOctaves, fbmOctaves);
+    }
+  }
+
+  setTailDeformation(
+    amplitude: number,
+    maskThreshold: number,
+    gaussianWidth: number,
+    maskedFbmIntensity: number,
+  ) {
+    this.use();
+    if (this.unifTailAmplitude !== null) {
+      gl.uniform1f(this.unifTailAmplitude, amplitude);
+    }
+    if (this.unifVertexMaskThreshold !== null) {
+      gl.uniform1f(this.unifVertexMaskThreshold, maskThreshold);
+    }
+    if (this.unifGaussianWidth !== null) {
+      gl.uniform1f(this.unifGaussianWidth, gaussianWidth);
+    }
+    if (this.unifMaskedFbmIntensity !== null) {
+      gl.uniform1f(this.unifMaskedFbmIntensity, maskedFbmIntensity);
     }
   }
 
@@ -336,6 +369,16 @@ class ShaderProgram {
     }
     if (this.unifTornadoColor !== null) {
       gl.uniform4fv(this.unifTornadoColor, color);
+    }
+  }
+
+  setFireFadeParameters(fadeScalar: number, fadePower: number) {
+    this.use();
+    if (this.unifFireFadeScalar !== null) {
+      gl.uniform1f(this.unifFireFadeScalar, fadeScalar);
+    }
+    if (this.unifFireFadePower !== null) {
+      gl.uniform1f(this.unifFireFadePower, fadePower);
     }
   }
 

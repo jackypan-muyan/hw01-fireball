@@ -3,6 +3,7 @@
 precision highp float;
 
 in vec3 fs_WorldPos;
+in float fs_GaussianMask;
 
 uniform vec4 u_FireYellow;
 uniform float u_Time;
@@ -11,6 +12,8 @@ uniform float u_PerlinSpeedY;
 uniform float u_PerlinScaleX;
 uniform float u_PerlinScaleY;
 uniform float u_PerlinThreshold;
+uniform float u_FireFadeScalar;
+uniform float u_FireFadePower;
 
 out vec4 out_Col;
 
@@ -70,5 +73,18 @@ void main()
         discard;
     }
 
-    out_Col = vec4(u_FireYellow.rgb, u_FireYellow.a);
+    float poweredGaussianMask = pow(
+        clamp(fs_GaussianMask, 0.0, 1.0),
+        max(u_FireFadePower, 0.0001)
+    );
+    float gaussianFade = clamp(
+        poweredGaussianMask * u_FireFadeScalar,
+        0.0,
+        1.0
+    );
+    float gaussianOpacity = 1.0 - gaussianFade;
+    out_Col = vec4(
+        u_FireYellow.rgb,
+        u_FireYellow.a * gaussianOpacity
+    );
 }
