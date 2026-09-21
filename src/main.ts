@@ -23,22 +23,36 @@ const controls = {
   fbmOctaves: 1,
   fresnelBias: 0.38,
   fresnelScale: 1.0,
-  fresnelPower: 2.0,
+  fresnelPower: 3.1,
   fresnelThreshold: 0.5,
   centerFresnelBias: 0.0,
-  centerFresnelScale: 1.0,
-  centerFresnelPower: 2.0,
-  centerFresnelThreshold: 0.5,
-  perlinSpeedX: 10.0,
+  centerFresnelScale: 2.0,
+  centerFresnelPower: 1.6,
+  centerFresnelThreshold: 0.02,
+  perlinSpeedX: 0.0,
   perlinSpeedY: 10.0,
   perlinScaleX: 10.0,
   perlinScaleY: 4.2,
   perlinThreshold: 0.49,
   fireTextureTesselation: 1,
-  fireRed: [120, 0, 0],
+  voronoiSpeedX: 0.0,
+  voronoiSpeedY: 4.85,
+  voronoiScaleX: 10.0,
+  voronoiScaleY: 4.2,
+  voronoiEdgeWidth: 0.1,
+  ashThreshold: 0.6,
+  tornadoSpeedX: 0.0,
+  tornadoSpeedY: 3.85,
+  tornadoScaleX: 10.0,
+  tornadoScaleY: 0.6,
+  tornadoEdgeWidth: 0.417,
+  tornadoThreshold: 0.6,
+  fireRed: [118, 0, 0],
   fireOrange: [255, 122, 0],
   fireYellow: [255, 251, 0],
-  fresnelCenterColor: [255, 255, 255],
+  fresnelCenterColor: [255, 207, 0],
+  ashColor: [80, 18, 18],
+  tornadoColor: [109, 0, 0],
   'Load Scene': loadScene, // A function pointer, essentially
 };
 
@@ -94,10 +108,24 @@ function main() {
   gui.add(controls, 'perlinScaleY', 0.1, 10.0).step(0.1).name('Perlin Scale Y');
   gui.add(controls, 'perlinThreshold', 0.0, 1.0).step(0.01).name('Perlin Threshold');
   gui.add(controls, 'fireTextureTesselation', 1, 20).step(1).name('Fire Texture Tesselation');
+  gui.add(controls, 'voronoiSpeedX', 0.0, 30.0).step(0.01).name('Voronoi Speed X');
+  gui.add(controls, 'voronoiSpeedY', 0.0, 30.0).step(0.01).name('Voronoi Speed Y');
+  gui.add(controls, 'voronoiScaleX', 0.1, 10.0).step(0.1).name('Voronoi Scale X');
+  gui.add(controls, 'voronoiScaleY', 0.1, 10.0).step(0.1).name('Voronoi Scale Y');
+  gui.add(controls, 'voronoiEdgeWidth', 0.001, 1.0).step(0.001).name('Voronoi Edge Width');
+  gui.add(controls, 'ashThreshold', 0.0, 1.0).step(0.01).name('Ash Threshold');
+  gui.add(controls, 'tornadoSpeedX', 0.0, 30.0).step(0.01).name('Tornado Speed X');
+  gui.add(controls, 'tornadoSpeedY', 0.0, 30.0).step(0.01).name('Tornado Speed Y');
+  gui.add(controls, 'tornadoScaleX', 0.1, 10.0).step(0.1).name('Tornado Scale X');
+  gui.add(controls, 'tornadoScaleY', 0.1, 10.0).step(0.1).name('Tornado Scale Y');
+  gui.add(controls, 'tornadoEdgeWidth', 0.001, 1.0).step(0.001).name('Tornado Edge Width');
+  gui.add(controls, 'tornadoThreshold', 0.0, 1.0).step(0.01).name('Tornado Threshold');
   gui.addColor(controls, 'fireRed').name('Fire Red');
   gui.addColor(controls, 'fireOrange').name('Fire Orange');
   gui.addColor(controls, 'fireYellow').name('Fire Yellow');
   gui.addColor(controls, 'fresnelCenterColor').name('Fresnel Center Color');
+  gui.addColor(controls, 'ashColor').name('Ash Color');
+  gui.addColor(controls, 'tornadoColor').name('Tornado Color');
   gui.add(controls, 'Load Scene');
 
   // get canvas and webgl context
@@ -159,6 +187,26 @@ function main() {
     );
     lambert.setPerlinThreshold(controls.perlinThreshold);
     lambert.setFireTextureTesselation(controls.fireTextureTesselation);
+    lambert.setVoronoiParameters(
+      controls.voronoiSpeedX,
+      controls.voronoiSpeedY,
+      controls.voronoiScaleX,
+      controls.voronoiScaleY,
+      controls.voronoiEdgeWidth,
+    );
+    lambert.setAshParameters(
+      colorToVec4(controls.ashColor),
+      controls.ashThreshold,
+    );
+    lambert.setTornadoParameters(
+      controls.tornadoSpeedX,
+      controls.tornadoSpeedY,
+      controls.tornadoScaleX,
+      controls.tornadoScaleY,
+      controls.tornadoEdgeWidth,
+      controls.tornadoThreshold,
+      colorToVec4(controls.tornadoColor),
+    );
     lambert.setFireColors(
       colorToVec4(controls.fireRed),
       colorToVec4(controls.fireOrange),

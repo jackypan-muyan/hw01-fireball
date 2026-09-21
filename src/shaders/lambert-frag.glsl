@@ -29,6 +29,17 @@ uniform float u_PerlinScaleX;
 uniform float u_PerlinScaleY;
 uniform float u_PerlinThreshold;
 uniform float u_FireTextureTesselation;
+uniform float u_VoronoiSpeedX;
+uniform float u_VoronoiSpeedY;
+uniform float u_VoronoiScaleX;
+uniform float u_VoronoiScaleY;
+uniform float u_VoronoiEdgeWidth;
+uniform float u_TornadoSpeedX;
+uniform float u_TornadoSpeedY;
+uniform float u_TornadoScaleX;
+uniform float u_TornadoScaleY;
+uniform float u_TornadoEdgeWidth;
+uniform float u_TornadoThreshold;
 
 // These are the interpolated values out of the rasterizer, so you can't know
 // their specific values without knowing the vertices that contributed to them
@@ -45,6 +56,9 @@ uniform vec4 u_FireYellow;
 uniform vec4 u_FireRed;
 uniform vec4 u_FireOrange;
 uniform vec4 u_FresnelCenterColor;
+uniform vec4 u_AshColor;
+uniform float u_AshThreshold;
+uniform vec4 u_TornadoColor;
 
 // Fresnel Mask =======================================================================
 float FresnelMask(vec3 viewDir, vec3 normal, float bias, float scale, float power) {
@@ -176,7 +190,50 @@ float fireMask(float inputVal, float threshold) {
     }
 }
 
-// ======================================================================================
+// Voronoi Noise ======================================================================================
+vec3 voronoiHash(vec3 cell)
+{
+    vec3 hashInput = vec3(
+        dot(cell, vec3(127.1, 311.7, 74.7)),
+        dot(cell, vec3(269.5, 183.3, 246.1)),
+        dot(cell, vec3(113.5, 271.9, 124.6))
+    );
+
+    return fract(sin(hashInput) * 43758.5453123);
+}
+
+// Return F2 - F1: the distance difference between the second-nearest
+// and nearest feature points. Values approach zero along cell borders.
+float voronoiNoise(vec3 samplePosition)
+{
+    vec3 cell = floor(samplePosition);
+    vec3 localPosition = fract(samplePosition);
+    float nearestDistanceSquared = 1e10;
+    float secondNearestDistanceSquared = 1e10;
+
+    for (int z = -1; z <= 1; ++z) {
+        for (int y = -1; y <= 1; ++y) {
+            for (int x = -1; x <= 1; ++x) {
+                vec3 neighbor = vec3(float(x), float(y), float(z));
+                vec3 featurePoint = voronoiHash(cell + neighbor);
+                vec3 toFeaturePoint = neighbor + featurePoint - localPosition;
+                float distanceSquared = dot(toFeaturePoint, toFeaturePoint);
+
+                if (distanceSquared < nearestDistanceSquared) {
+                    secondNearestDistanceSquared = nearestDistanceSquared;
+                    nearestDistanceSquared = distanceSquared;
+                } else if (distanceSquared < secondNearestDistanceSquared) {
+                    secondNearestDistanceSquared = distanceSquared;
+                }
+            }
+        }
+    }
+
+    return sqrt(secondNearestDistanceSquared)
+        - sqrt(nearestDistanceSquared);
+}
+
+// ====================================================================================================
 
 void main()
 {
@@ -221,6 +278,30 @@ void main()
             u_FireTextureTesselation
         );
 
+        // Voronoi Noise mask;
+        vec3 voronoiSamplePosition = fs_WorldPos;
+        voronoiSamplePosition.xy *= vec2(u_VoronoiScaleX, u_VoronoiScaleY);
+        voronoiSamplePosition.xy += vec2(u_VoronoiSpeedX, u_VoronoiSpeedY) * u_Time;
+        float voronoi = voronoiNoise(voronoiSamplePosition);
+        float ashMask = smoothstep(
+            u_AshThreshold - u_VoronoiEdgeWidth,
+            u_AshThreshold,
+            voronoi
+        );
+
+        // A second, independently seeded Voronoi layer named Tornado.
+        vec3 tornadoSamplePosition = fs_WorldPos;
+        tornadoSamplePosition.xy *= vec2(u_TornadoScaleX, u_TornadoScaleY);
+        tornadoSamplePosition.xy += vec2(u_TornadoSpeedX, u_TornadoSpeedY) * u_Time;
+        tornadoSamplePosition += vec3(17.3, 41.7, 9.2);
+        float tornado = voronoiNoise(tornadoSamplePosition);
+        float tornadoMask = smoothstep(
+            u_TornadoThreshold - u_TornadoEdgeWidth,
+            u_TornadoThreshold,
+            tornado
+        );
+
+
         // Final Color Calculation
         float stripeMask =
             fireMask(perlinValue, u_PerlinThreshold);
@@ -244,6 +325,22 @@ void main()
             u_FresnelCenterColor.rgb,
             centerFresnelMask
         );
+
+        // Ash Dots
+
+        fireBallColor = mix(
+            fireBallColor,
+            u_AshColor.rgb,
+            ashMask
+        );
+
+        // Tornado Voronoi layer
+        fireBallColor = mix(
+            fireBallColor,
+            u_TornadoColor.rgb,
+            tornadoMask
+        );
+
 
         vec3 finalColor = mix(
             fireBallColor,

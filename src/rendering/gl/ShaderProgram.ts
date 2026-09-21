@@ -51,10 +51,24 @@ class ShaderProgram {
   unifPerlinScaleY: WebGLUniformLocation;
   unifPerlinThreshold: WebGLUniformLocation;
   unifFireTextureTesselation: WebGLUniformLocation;
+  unifVoronoiSpeedX: WebGLUniformLocation;
+  unifVoronoiSpeedY: WebGLUniformLocation;
+  unifVoronoiScaleX: WebGLUniformLocation;
+  unifVoronoiScaleY: WebGLUniformLocation;
+  unifVoronoiEdgeWidth: WebGLUniformLocation;
   unifFireRed: WebGLUniformLocation;
   unifFireOrange: WebGLUniformLocation;
   unifFireYellow: WebGLUniformLocation;
   unifFresnelCenterColor: WebGLUniformLocation;
+  unifAshColor: WebGLUniformLocation;
+  unifAshThreshold: WebGLUniformLocation;
+  unifTornadoSpeedX: WebGLUniformLocation;
+  unifTornadoSpeedY: WebGLUniformLocation;
+  unifTornadoScaleX: WebGLUniformLocation;
+  unifTornadoScaleY: WebGLUniformLocation;
+  unifTornadoEdgeWidth: WebGLUniformLocation;
+  unifTornadoThreshold: WebGLUniformLocation;
+  unifTornadoColor: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -96,10 +110,24 @@ class ShaderProgram {
     this.unifPerlinScaleY = gl.getUniformLocation(this.prog, 'u_PerlinScaleY');
     this.unifPerlinThreshold = gl.getUniformLocation(this.prog, 'u_PerlinThreshold');
     this.unifFireTextureTesselation = gl.getUniformLocation(this.prog, 'u_FireTextureTesselation');
+    this.unifVoronoiSpeedX = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedX');
+    this.unifVoronoiSpeedY = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedY');
+    this.unifVoronoiScaleX = gl.getUniformLocation(this.prog, 'u_VoronoiScaleX');
+    this.unifVoronoiScaleY = gl.getUniformLocation(this.prog, 'u_VoronoiScaleY');
+    this.unifVoronoiEdgeWidth = gl.getUniformLocation(this.prog, 'u_VoronoiEdgeWidth');
     this.unifFireRed = gl.getUniformLocation(this.prog, 'u_FireRed');
     this.unifFireOrange = gl.getUniformLocation(this.prog, 'u_FireOrange');
     this.unifFireYellow = gl.getUniformLocation(this.prog, 'u_FireYellow');
     this.unifFresnelCenterColor = gl.getUniformLocation(this.prog, 'u_FresnelCenterColor');
+    this.unifAshColor = gl.getUniformLocation(this.prog, 'u_AshColor');
+    this.unifAshThreshold = gl.getUniformLocation(this.prog, 'u_AshThreshold');
+    this.unifTornadoSpeedX = gl.getUniformLocation(this.prog, 'u_TornadoSpeedX');
+    this.unifTornadoSpeedY = gl.getUniformLocation(this.prog, 'u_TornadoSpeedY');
+    this.unifTornadoScaleX = gl.getUniformLocation(this.prog, 'u_TornadoScaleX');
+    this.unifTornadoScaleY = gl.getUniformLocation(this.prog, 'u_TornadoScaleY');
+    this.unifTornadoEdgeWidth = gl.getUniformLocation(this.prog, 'u_TornadoEdgeWidth');
+    this.unifTornadoThreshold = gl.getUniformLocation(this.prog, 'u_TornadoThreshold');
+    this.unifTornadoColor = gl.getUniformLocation(this.prog, 'u_TornadoColor');
   }
 
   use() {
@@ -236,6 +264,31 @@ class ShaderProgram {
     }
   }
 
+  setVoronoiParameters(
+    speedX: number,
+    speedY: number,
+    scaleX: number,
+    scaleY: number,
+    edgeWidth: number,
+  ) {
+    this.use();
+    if (this.unifVoronoiSpeedX !== null) {
+      gl.uniform1f(this.unifVoronoiSpeedX, speedX);
+    }
+    if (this.unifVoronoiSpeedY !== null) {
+      gl.uniform1f(this.unifVoronoiSpeedY, speedY);
+    }
+    if (this.unifVoronoiScaleX !== null) {
+      gl.uniform1f(this.unifVoronoiScaleX, scaleX);
+    }
+    if (this.unifVoronoiScaleY !== null) {
+      gl.uniform1f(this.unifVoronoiScaleY, scaleY);
+    }
+    if (this.unifVoronoiEdgeWidth !== null) {
+      gl.uniform1f(this.unifVoronoiEdgeWidth, edgeWidth);
+    }
+  }
+
   setFireColors(red: vec4, orange: vec4, yellow: vec4, fresnelCenter: vec4) {
     this.use();
     if (this.unifFireRed !== null) {
@@ -249,6 +302,49 @@ class ShaderProgram {
     }
     if (this.unifFresnelCenterColor !== null) {
       gl.uniform4fv(this.unifFresnelCenterColor, fresnelCenter);
+    }
+  }
+
+  setAshParameters(color: vec4, threshold: number) {
+    this.use();
+    if (this.unifAshColor !== null) {
+      gl.uniform4fv(this.unifAshColor, color);
+    }
+    if (this.unifAshThreshold !== null) {
+      gl.uniform1f(this.unifAshThreshold, threshold);
+    }
+  }
+
+  setTornadoParameters(
+    speedX: number,
+    speedY: number,
+    scaleX: number,
+    scaleY: number,
+    edgeWidth: number,
+    threshold: number,
+    color: vec4,
+  ) {
+    this.use();
+    if (this.unifTornadoSpeedX !== null) {
+      gl.uniform1f(this.unifTornadoSpeedX, speedX);
+    }
+    if (this.unifTornadoSpeedY !== null) {
+      gl.uniform1f(this.unifTornadoSpeedY, speedY);
+    }
+    if (this.unifTornadoScaleX !== null) {
+      gl.uniform1f(this.unifTornadoScaleX, scaleX);
+    }
+    if (this.unifTornadoScaleY !== null) {
+      gl.uniform1f(this.unifTornadoScaleY, scaleY);
+    }
+    if (this.unifTornadoEdgeWidth !== null) {
+      gl.uniform1f(this.unifTornadoEdgeWidth, edgeWidth);
+    }
+    if (this.unifTornadoThreshold !== null) {
+      gl.uniform1f(this.unifTornadoThreshold, threshold);
+    }
+    if (this.unifTornadoColor !== null) {
+      gl.uniform4fv(this.unifTornadoColor, color);
     }
   }
 
