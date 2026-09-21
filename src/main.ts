@@ -10,6 +10,7 @@ import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 
 import lambertVertSource from './shaders/lambert-vert.glsl?raw';
 import lambertFragSource from './shaders/lambert-frag.glsl?raw';
+import fireLayerFragSource from './shaders/fire-layer-frag.glsl?raw';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -29,23 +30,22 @@ const controls = {
   centerFresnelScale: 2.0,
   centerFresnelPower: 1.6,
   centerFresnelThreshold: 0.02,
-  perlinSpeedX: 0.0,
-  perlinSpeedY: 10.0,
-  perlinScaleX: 10.0,
-  perlinScaleY: 4.2,
-  perlinThreshold: 0.49,
-  fireTextureTesselation: 1,
+  perlinSpeedX: 2.79,
+  perlinSpeedY: 6.04,
+  perlinScaleX: 7.9,
+  perlinScaleY: 1.6,
+  perlinThreshold: 0.45,
   voronoiSpeedX: 0.0,
-  voronoiSpeedY: 4.85,
-  voronoiScaleX: 10.0,
+  voronoiSpeedY: 7.0,
+  voronoiScaleX: 9.6,
   voronoiScaleY: 4.2,
   voronoiEdgeWidth: 0.1,
   ashThreshold: 0.6,
   tornadoSpeedX: 0.0,
-  tornadoSpeedY: 3.85,
+  tornadoSpeedY: 12.0,
   tornadoScaleX: 10.0,
   tornadoScaleY: 0.6,
-  tornadoEdgeWidth: 0.417,
+  tornadoEdgeWidth: 0.42,
   tornadoThreshold: 0.6,
   fireRed: [118, 0, 0],
   fireOrange: [255, 122, 0],
@@ -66,12 +66,19 @@ function colorToVec4(color: number[]): vec4 {
 }
 
 let icosphere: Icosphere;
+let fireIcosphere: Icosphere;
 let square: Square;
 let prevTesselations: number = controls.tesselations;
 
 function loadScene() {
   icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, controls.tesselations);
   icosphere.create();
+  fireIcosphere = new Icosphere(
+    vec3.fromValues(0, 0, 0),
+    1.1,
+    controls.tesselations,
+  );
+  fireIcosphere.create();
   square = new Square(vec3.fromValues(0, 0, 0));
   square.create();
 }
@@ -107,7 +114,6 @@ function main() {
   gui.add(controls, 'perlinScaleX', 0.1, 10.0).step(0.1).name('Perlin Scale X');
   gui.add(controls, 'perlinScaleY', 0.1, 10.0).step(0.1).name('Perlin Scale Y');
   gui.add(controls, 'perlinThreshold', 0.0, 1.0).step(0.01).name('Perlin Threshold');
-  gui.add(controls, 'fireTextureTesselation', 1, 20).step(1).name('Fire Texture Tesselation');
   gui.add(controls, 'voronoiSpeedX', 0.0, 30.0).step(0.01).name('Voronoi Speed X');
   gui.add(controls, 'voronoiSpeedY', 0.0, 30.0).step(0.01).name('Voronoi Speed Y');
   gui.add(controls, 'voronoiScaleX', 0.1, 10.0).step(0.1).name('Voronoi Scale X');
@@ -151,6 +157,10 @@ function main() {
     new Shader(gl.VERTEX_SHADER, lambertVertSource),
     new Shader(gl.FRAGMENT_SHADER, lambertFragSource),
   ]);
+  const fireLayer = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, lambertVertSource),
+    new Shader(gl.FRAGMENT_SHADER, fireLayerFragSource),
+  ]);
   const startTime = performance.now();
 
   // This function will be called every frame
@@ -164,6 +174,12 @@ function main() {
       prevTesselations = controls.tesselations;
       icosphere = new Icosphere(vec3.fromValues(0, 0, 0), 1, prevTesselations);
       icosphere.create();
+      fireIcosphere = new Icosphere(
+        vec3.fromValues(0, 0, 0),
+        1.1,
+        prevTesselations,
+      );
+      fireIcosphere.create();
     }
     const elapsedTime = (performance.now() - startTime) / 1000.0;
     lambert.setTime(elapsedTime);
@@ -177,16 +193,6 @@ function main() {
       controls.vertexSpeedX,
       controls.vertexSpeedY,
     );
-    lambert.setPerlinAnimation(
-      controls.perlinSpeedX,
-      controls.perlinSpeedY,
-    );
-    lambert.setPerlinScale(
-      controls.perlinScaleX,
-      controls.perlinScaleY,
-    );
-    lambert.setPerlinThreshold(controls.perlinThreshold);
-    lambert.setFireTextureTesselation(controls.fireTextureTesselation);
     lambert.setVoronoiParameters(
       controls.voronoiSpeedX,
       controls.voronoiSpeedY,
@@ -225,10 +231,40 @@ function main() {
       controls.centerFresnelPower,
       controls.centerFresnelThreshold,
     );
+
+    fireLayer.setTime(elapsedTime);
+    fireLayer.setVertexDeformation(
+      controls.sineAmplitude,
+      controls.sineFrequency,
+      controls.fbmScale,
+      controls.fbmOctaves,
+    );
+    fireLayer.setVertexAnimation(
+      controls.vertexSpeedX,
+      controls.vertexSpeedY,
+    );
+    fireLayer.setPerlinAnimation(
+      controls.perlinSpeedX,
+      controls.perlinSpeedY,
+    );
+    fireLayer.setPerlinScale(
+      controls.perlinScaleX,
+      controls.perlinScaleY,
+    );
+    fireLayer.setPerlinThreshold(controls.perlinThreshold);
+    fireLayer.setFireColors(
+      colorToVec4(controls.fireRed),
+      colorToVec4(controls.fireOrange),
+      colorToVec4(controls.fireYellow),
+      colorToVec4(controls.fresnelCenterColor),
+    );
+
     renderer.render(camera, lambert, [
       icosphere,
       // square,
     ]);
+
+    renderer.render(camera, fireLayer, [fireIcosphere]);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame

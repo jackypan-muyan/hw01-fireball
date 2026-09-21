@@ -50,7 +50,6 @@ class ShaderProgram {
   unifPerlinScaleX: WebGLUniformLocation;
   unifPerlinScaleY: WebGLUniformLocation;
   unifPerlinThreshold: WebGLUniformLocation;
-  unifFireTextureTesselation: WebGLUniformLocation;
   unifVoronoiSpeedX: WebGLUniformLocation;
   unifVoronoiSpeedY: WebGLUniformLocation;
   unifVoronoiScaleX: WebGLUniformLocation;
@@ -109,7 +108,6 @@ class ShaderProgram {
     this.unifPerlinScaleX = gl.getUniformLocation(this.prog, 'u_PerlinScaleX');
     this.unifPerlinScaleY = gl.getUniformLocation(this.prog, 'u_PerlinScaleY');
     this.unifPerlinThreshold = gl.getUniformLocation(this.prog, 'u_PerlinThreshold');
-    this.unifFireTextureTesselation = gl.getUniformLocation(this.prog, 'u_FireTextureTesselation');
     this.unifVoronoiSpeedX = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedX');
     this.unifVoronoiSpeedY = gl.getUniformLocation(this.prog, 'u_VoronoiSpeedY');
     this.unifVoronoiScaleX = gl.getUniformLocation(this.prog, 'u_VoronoiScaleX');
@@ -254,13 +252,6 @@ class ShaderProgram {
     this.use();
     if (this.unifPerlinThreshold !== null) {
       gl.uniform1f(this.unifPerlinThreshold, threshold);
-    }
-  }
-
-  setFireTextureTesselation(tesselation: number) {
-    this.use();
-    if (this.unifFireTextureTesselation !== null) {
-      gl.uniform1f(this.unifFireTextureTesselation, tesselation);
     }
   }
 

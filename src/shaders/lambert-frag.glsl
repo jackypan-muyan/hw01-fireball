@@ -23,12 +23,6 @@ uniform float u_CenterFresnelScale;
 uniform float u_CenterFresnelPower;
 uniform float u_CenterFresnelThreshold;
 uniform float u_Time;
-uniform float u_PerlinSpeedX;
-uniform float u_PerlinSpeedY;
-uniform float u_PerlinScaleX;
-uniform float u_PerlinScaleY;
-uniform float u_PerlinThreshold;
-uniform float u_FireTextureTesselation;
 uniform float u_VoronoiSpeedX;
 uniform float u_VoronoiSpeedY;
 uniform float u_VoronoiScaleX;
@@ -52,7 +46,6 @@ out vec4 out_Col; // This is the final output color that you will see on your
                   // screen for the pixel that is currently being processed.
 
 // Colors
-uniform vec4 u_FireYellow;
 uniform vec4 u_FireRed;
 uniform vec4 u_FireOrange;
 uniform vec4 u_FresnelCenterColor;
@@ -67,128 +60,6 @@ float FresnelMask(vec3 viewDir, vec3 normal, float bias, float scale, float powe
     return clamp(result, 0.0, 1.0);
 }
 // =====================================================================================
-
-// Perlin Noise ========================================================================
-vec3 gradientHash(vec3 latticePoint)
-{
-    vec3 hashInput = vec3(
-        dot(latticePoint, vec3(127.1, 311.7, 74.7)),
-        dot(latticePoint, vec3(269.5, 183.3, 246.1)),
-        dot(latticePoint, vec3(113.5, 271.9, 124.6))
-    );
-
-    vec3 gradient = -1.0 + 2.0 * fract(sin(hashInput) * 43758.5453123);
-    return normalize(gradient);
-}
-
-vec3 perlinFade(vec3 t)
-{
-    return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
-}
-
-float perlinNoise(vec3 samplePosition)
-{
-    vec3 cell = floor(samplePosition);
-    vec3 localPosition = fract(samplePosition);
-    vec3 blend = perlinFade(localPosition);
-
-    float n000 = dot(gradientHash(cell + vec3(0.0, 0.0, 0.0)), localPosition - vec3(0.0, 0.0, 0.0));
-    float n100 = dot(gradientHash(cell + vec3(1.0, 0.0, 0.0)), localPosition - vec3(1.0, 0.0, 0.0));
-    float n010 = dot(gradientHash(cell + vec3(0.0, 1.0, 0.0)), localPosition - vec3(0.0, 1.0, 0.0));
-    float n110 = dot(gradientHash(cell + vec3(1.0, 1.0, 0.0)), localPosition - vec3(1.0, 1.0, 0.0));
-    float n001 = dot(gradientHash(cell + vec3(0.0, 0.0, 1.0)), localPosition - vec3(0.0, 0.0, 1.0));
-    float n101 = dot(gradientHash(cell + vec3(1.0, 0.0, 1.0)), localPosition - vec3(1.0, 0.0, 1.0));
-    float n011 = dot(gradientHash(cell + vec3(0.0, 1.0, 1.0)), localPosition - vec3(0.0, 1.0, 1.0));
-    float n111 = dot(gradientHash(cell + vec3(1.0, 1.0, 1.0)), localPosition - vec3(1.0, 1.0, 1.0));
-
-    float nx00 = mix(n000, n100, blend.x);
-    float nx10 = mix(n010, n110, blend.x);
-    float nx01 = mix(n001, n101, blend.x);
-    float nx11 = mix(n011, n111, blend.x);
-    float nxy0 = mix(nx00, nx10, blend.y);
-    float nxy1 = mix(nx01, nx11, blend.y);
-    float rawNoise = mix(nxy0, nxy1, blend.z);
-
-    return clamp(rawNoise * 0.5 + 0.5, 0.0, 1.0);
-}
-
-float piecewiseLinearPerlin(vec3 samplePosition, float tesselation)
-{
-    float gridResolution = max(floor(tesselation), 1.0);
-    vec3 gridPosition = samplePosition * gridResolution;
-    vec3 cell = floor(gridPosition);
-    vec3 localPosition = fract(gridPosition);
-
-    vec3 firstOffset;
-    vec3 secondOffset;
-    float largest;
-    float middle;
-    float smallest;
-
-    if (localPosition.x >= localPosition.y) {
-        if (localPosition.y >= localPosition.z) {
-            firstOffset = vec3(1.0, 0.0, 0.0);
-            secondOffset = vec3(1.0, 1.0, 0.0);
-            largest = localPosition.x;
-            middle = localPosition.y;
-            smallest = localPosition.z;
-        } else if (localPosition.x >= localPosition.z) {
-            firstOffset = vec3(1.0, 0.0, 0.0);
-            secondOffset = vec3(1.0, 0.0, 1.0);
-            largest = localPosition.x;
-            middle = localPosition.z;
-            smallest = localPosition.y;
-        } else {
-            firstOffset = vec3(0.0, 0.0, 1.0);
-            secondOffset = vec3(1.0, 0.0, 1.0);
-            largest = localPosition.z;
-            middle = localPosition.x;
-            smallest = localPosition.y;
-        }
-    } else {
-        if (localPosition.x >= localPosition.z) {
-            firstOffset = vec3(0.0, 1.0, 0.0);
-            secondOffset = vec3(1.0, 1.0, 0.0);
-            largest = localPosition.y;
-            middle = localPosition.x;
-            smallest = localPosition.z;
-        } else if (localPosition.y >= localPosition.z) {
-            firstOffset = vec3(0.0, 1.0, 0.0);
-            secondOffset = vec3(0.0, 1.0, 1.0);
-            largest = localPosition.y;
-            middle = localPosition.z;
-            smallest = localPosition.x;
-        } else {
-            firstOffset = vec3(0.0, 0.0, 1.0);
-            secondOffset = vec3(0.0, 1.0, 1.0);
-            largest = localPosition.z;
-            middle = localPosition.y;
-            smallest = localPosition.x;
-        }
-    }
-
-    const vec3 sampleOffset = vec3(0.37, 0.61, 0.83);
-    float value0 = perlinNoise(cell / gridResolution + sampleOffset);
-    float value1 = perlinNoise((cell + firstOffset) / gridResolution + sampleOffset);
-    float value2 = perlinNoise((cell + secondOffset) / gridResolution + sampleOffset);
-    float value3 = perlinNoise((cell + vec3(1.0)) / gridResolution + sampleOffset);
-
-    return
-        (1.0 - largest) * value0
-        + (largest - middle) * value1
-        + (middle - smallest) * value2
-        + smallest * value3;
-}
-// =====================================================================================
-
-// Perlin Mask =========================================================================
-float fireMask(float inputVal, float threshold) {
-    if (inputVal < threshold) {
-        return 1.0;
-    } else {
-        return 0.0;
-    }
-}
 
 // Voronoi Noise ======================================================================================
 vec3 voronoiHash(vec3 cell)
@@ -270,14 +141,6 @@ void main()
             (1.0 - step(u_CenterFresnelThreshold, centerFresnel))
             * (1.0 - centerFresnel);
 
-        vec3 perlinSamplePosition = fs_WorldPos;
-        perlinSamplePosition.xy *= vec2(u_PerlinScaleX, u_PerlinScaleY);
-        perlinSamplePosition.xy += vec2(u_PerlinSpeedX, u_PerlinSpeedY) * u_Time;
-        float perlinValue = 1.0 - piecewiseLinearPerlin(
-            perlinSamplePosition,
-            u_FireTextureTesselation
-        );
-
         // Voronoi Noise mask;
         vec3 voronoiSamplePosition = fs_WorldPos;
         voronoiSamplePosition.xy *= vec2(u_VoronoiScaleX, u_VoronoiScaleY);
@@ -303,9 +166,6 @@ void main()
 
 
         // Final Color Calculation
-        float stripeMask =
-            fireMask(perlinValue, u_PerlinThreshold);
-
         float fireFresnelMask = step(u_FresnelThreshold, fresnel);
         fresnel *= fireFresnelMask;
 
@@ -342,11 +202,7 @@ void main()
         );
 
 
-        vec3 finalColor = mix(
-            fireBallColor,
-            u_FireYellow.rgb,
-            stripeMask
-        );
+        vec3 finalColor = fireBallColor;
 
         out_Col = vec4(
             finalColor,

@@ -41,6 +41,7 @@ out vec3 fs_WorldPos;        // The position of each vertex in world space. This
 const vec4 lightPos = vec4(5, 5, 3, 1); //The position of our virtual light, which is used to compute the shading of
                                         //the geometry in the fragment shader.
 
+// Perlin Noise Functions =======================================================================
 vec3 gradientHash(vec3 latticePoint)
 {
     vec3 hashInput = vec3(
@@ -83,7 +84,9 @@ float perlinNoise(vec3 samplePosition)
 
     return clamp(rawNoise * 0.5 + 0.5, 0.0, 1.0);
 }
+// ====================================================================================================
 
+// Fractal Brownian Motion (FBM) ======================================================================================
 float fbm(vec3 samplePosition)
 {
     float value = 0.0;
@@ -103,6 +106,7 @@ float fbm(vec3 samplePosition)
 
     return value / max(amplitudeSum, 0.0001);
 }
+// ====================================================================================================
 
 void main()
 {
