@@ -35,3 +35,6 @@ The outer gas shell is rendered on another icosphere. A sine wave in the fragmen
 ## Shared Shader Structure
 
 All icospheres use the same vertex shader to keep their deformations consistent. The masks calculated in the vertex shader are passed to the fragment shaders, where each rendering layer uses them to control color, visibility, or opacity. Therefore the tail and ball shader were in the same fragment shader.
+
+
+DEMO Link: https://jackypan-muyan.github.io/hw01-fireball/
